@@ -6,6 +6,7 @@ export class Game extends Scene
     player;
     keys;
     gameOver = false;
+    isAttacking = false;
 
     constructor ()
     {
@@ -22,30 +23,15 @@ export class Game extends Scene
         platforms.create(400, 568, 'ground').setScale(2).refreshBody();
     
         this.player = this.physics.add.sprite(100, 300, 'fighter').setScale(8);
+
+        this.player.body.setSize(16, 28);
+        this.player.body.setOffset(8, 4);
         
         //this.player.setBounce(0.2);
-        this.player.setCollideWorldBounds(true);
+        this.player.body.setCollideWorldBounds(true);
         this.player.body.setGravityY(500);
 
-        this.anims.create({
-            key: 'move',
-            frames: this.anims.generateFrameNumbers('fighter', {start: 8, end: 9}),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        this.anims.create({
-            key: 'stop',
-            frames: [{key: 'fighter', frame: 0}],
-            frameRate: 10
-        });
-
-        this.anims.create({
-            key: 'punch',
-            frames: this.anims.generateFrameNumbers('fighter', {start: 0, end: 6}),
-            frameRate: 10,
-            repeat: -1
-        });
+        
 
         this.physics.add.collider(this.player, platforms);
 
@@ -57,6 +43,11 @@ export class Game extends Scene
         scoreText = this.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: '#000'});
 
 
+        this.player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function () {
+            this.isAttacking = false;
+        }, this);
+
+
         EventBus.emit('current-scene-ready', this);
     }
 
@@ -66,7 +57,25 @@ export class Game extends Scene
             return;
         }
 
-        if (this.keys.A.isDown && this.player.body.touching.down)
+        // attack animations take priority
+        if (this.isAttacking) {
+            // set velocity to zero if we land while attacking in air
+            if (this.player.body.touching.down) {
+                this.player.setVelocityX(0);
+            }
+            return; 
+        }
+
+        // attack inputs have highest priority
+        if (this.keys.U.isDown) {
+            if (this.player.body.touching.down) {
+                this.player.setVelocityX(0);
+            }
+            
+            this.player.anims.play('punch', true);
+            this.isAttacking = true;
+        }
+        else if (this.keys.A.isDown && this.player.body.touching.down)
         {
             this.player.setVelocityX(-160);
             this.player.anims.play('move', true);
@@ -81,13 +90,8 @@ export class Game extends Scene
             if (this.player.body.touching.down) {
                 this.player.setVelocityX(0);
             }
-            if (this.keys.U.isDown) {
-                console.log('working?');
-                this.player.anims.play('punch', true);
-            }
-            else {
-                this.player.anims.play('stop');
-            }
+            
+            this.player.anims.play('stop');
         }
 
         if (this.keys.W.isDown && this.player.body.touching.down)

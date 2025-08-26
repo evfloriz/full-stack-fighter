@@ -38,14 +38,33 @@ export class Preloader extends Scene
 
         this.load.spritesheet('dude', 'dude.png', {frameWidth:32, frameHeight:48});
 
-        this.load.spritesheet('fighter', 'stickfighter.png', {frameWidth:32, frameHeight:32});
-        
+        this.load.spritesheet('fighter', 'stickfighter2.png', {frameWidth:32, frameHeight:32});
     }
 
     create ()
     {
         //  When all the assets have loaded, it's often worth creating global objects here that the rest of the game can use.
         //  For example, you can define global animations here, so we can use them in other scenes.
+
+        this.anims.create({
+            key: 'move',
+            frames: this.anims.generateFrameNumbers('fighter', { frames: [4,0] }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'stop',
+            frames: [{key: 'fighter', frame: 0}],
+            frameRate: 10
+        });
+
+        this.anims.create({
+            key: 'punch',
+            frames: this.anims.generateFrameNumbers('fighter', {frames: [1, 2, 2, 1]}),
+            frameRate: 10,
+            repeat: 0
+        });
 
         //  Move to the MainMenu. You could also swap this for a Scene Transition, such as a camera fade.
         this.scene.start('MainMenu');
