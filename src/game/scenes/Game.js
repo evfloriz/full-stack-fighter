@@ -6,8 +6,9 @@ export class Game extends Scene
     player;
     keys;
     gameOver = false;
-    isAttacking = false;
-
+    p1keybinds = new Map();
+    p2keybinds = new Map();
+    
     constructor ()
     {
         super('Game');
@@ -22,30 +23,49 @@ export class Game extends Scene
 
         platforms.create(400, 568, 'ground').setScale(2).refreshBody();
     
-        this.player = this.physics.add.sprite(100, 300, 'fighter').setScale(8);
+        this.player1 = this.initPlayer(100, 300);
+        this.player2 = this.initPlayer(700, 300);
 
-        this.player.body.setSize(16, 28);
-        this.player.body.setOffset(8, 4);
+        this.player2.setFlipX(true);
+
+        this.player1.setDebug(true);
+        this.player2.setDebug(false);
         
-        //this.player.setBounce(0.2);
-        this.player.body.setCollideWorldBounds(true);
-        this.player.body.setGravityY(500);
+        this.physics.add.collider(this.player1, platforms);
+        this.physics.add.collider(this.player2, platforms);
+        this.physics.add.collider(this.player1, this.player2);
 
-        
-
-        this.physics.add.collider(this.player, platforms);
-
-        this.keys = this.input.keyboard.addKeys('W,A,S,D,U');
-        
-        let score = 0;
-        let scoreText;
-
-        scoreText = this.add.text(16, 16, 'Score: 0', {fontSize: '32px', fill: '#000'});
+        this.initKeybinds();
 
 
-        this.player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function () {
-            this.isAttacking = false;
-        }, this);
+
+        // hitbox experiments
+
+        this.hitbox = this.add.zone(100, 300).setSize(128, 224);
+        this.physics.world.enable(this.hitbox);
+        this.hitbox.body.setAllowGravity(false);
+        this.hitbox.body.debugBodyColor = 0x00AA00;
+
+        this.hurtbox = this.add.zone(700, 300).setSize(32, 32);
+        this.physics.world.enable(this.hurtbox);
+        this.hurtbox.body.setAllowGravity(false);
+        this.hurtbox.body.debugBodyColor = 0xFF0000;
+
+        // group of attack hitbox zones
+        // group of player hitbox zones
+        // on attack, add new zone to group
+
+        this.player1.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
+            if (animation.key == 'punch' && frame.index == 2) {
+                console.log("spawn hitbox");
+            }
+        });
+
+        this.physics.add.overlap(this.player1, this.hurtbox, overlapCallback);
+
+        function overlapCallback(hitbox, hurtbox) {
+            console.log("hit");
+        }
 
 
         EventBus.emit('current-scene-ready', this);
@@ -57,47 +77,104 @@ export class Game extends Scene
             return;
         }
 
+        this.hitbox.setPosition(this.player1.x, this.player1.y + 16);
+        this.hurtbox.setPosition(this.player2.x - 120, this.player2.y + 16);
+
+        this.updatePlayer(this.player1, this.p1keybinds);
+        this.updatePlayer(this.player2, this.p2keybinds);
+    }
+
+    initPlayer(x, y) {
+        let player = this.physics.add.sprite(x, y, 'fighter').setScale(8);
+
+        player.body.setSize(16, 28);
+        player.body.setOffset(8, 4);
+        
+        player.body.setCollideWorldBounds(true);
+        player.body.setGravityY(500);
+
+        // switch to stop animation when animation is complete
+        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function (animation) {
+            if (animation.key == 'punch') {
+                console.log('punch ended');
+                player.anims.play('stop');
+            }
+        });
+
+        return player
+    }
+
+    updatePlayer(player, keybinds) {
+        
+        let isAttacking = false;
+        if (player.anims.currentAnim != null && player.anims.currentAnim.key == 'punch') {
+            //console.log(player.anims.currentAnim.key);
+            isAttacking = true;
+        }
+
         // attack animations take priority
-        if (this.isAttacking) {
+        if (isAttacking) {
             // set velocity to zero if we land while attacking in air
-            if (this.player.body.touching.down) {
-                this.player.setVelocityX(0);
+            if (player.body.touching.down) {
+                player.setVelocityX(0);
             }
             return; 
         }
 
         // attack inputs have highest priority
-        if (this.keys.U.isDown) {
-            if (this.player.body.touching.down) {
-                this.player.setVelocityX(0);
+        if (keybinds.get('punch').isDown) {
+            if (player.body.touching.down) {
+                player.setVelocityX(0);
             }
             
-            this.player.anims.play('punch', true);
-            this.isAttacking = true;
+            player.anims.play('punch', true);
+            isAttacking = true;
         }
-        else if (this.keys.A.isDown && this.player.body.touching.down)
+        else if (keybinds.get('left').isDown && player.body.touching.down)
         {
-            this.player.setVelocityX(-160);
-            this.player.anims.play('move', true);
+            player.setVelocityX(-160);
+            player.anims.play('move', true);
         }
-        else if (this.keys.D.isDown && this.player.body.touching.down)
+        else if (keybinds.get('right').isDown && player.body.touching.down)
         {
-            this.player.setVelocityX(160);
-            this.player.anims.play('move', true);
+            player.setVelocityX(160);
+            player.anims.play('move', true);
         }
         else
         {
-            if (this.player.body.touching.down) {
-                this.player.setVelocityX(0);
+            if (player.body.touching.down) {
+                player.setVelocityX(0);
             }
             
-            this.player.anims.play('stop');
+            player.anims.play('stop');
         }
 
-        if (this.keys.W.isDown && this.player.body.touching.down)
+        if (keybinds.get('up').isDown && player.body.touching.down)
         {
-            this.player.setVelocityY(-500);
+            player.setVelocityY(-500);
         }
+    }
+
+    initKeybinds() {
+        // Pulled to a new function for cleaner organization, think I'll have to refactor
+
+        // TODO: want this associated with a player. maybe a distinct player object
+        // with all the data one would need? ie sprite + keybinds + etc.
+        // Or is this global state information?
+        
+        this.keys = this.input.keyboard.addKeys('W,A,S,D,E,I,J,K,L,U');
+
+        this.p1keybinds.set('up', this.keys.W);
+        this.p1keybinds.set('left', this.keys.A);
+        this.p1keybinds.set('down', this.keys.S);
+        this.p1keybinds.set('right', this.keys.D);
+        this.p1keybinds.set('punch', this.keys.E);
+
+        this.p2keybinds.set('up',this.keys.I);
+        this.p2keybinds.set('left', this.keys.J);
+        this.p2keybinds.set('down', this.keys.K);
+        this.p2keybinds.set('right', this.keys.L);
+        this.p2keybinds.set('punch', this.keys.U);
     }
 
     changeScene ()
