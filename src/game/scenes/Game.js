@@ -3,7 +3,7 @@ import { Scene } from 'phaser';
 
 export class Game extends Scene
 {
-    gameOver = false;
+    gameOverCheck = false;
     p1keybinds = new Map();
     p2keybinds = new Map();
     
@@ -57,8 +57,11 @@ export class Game extends Scene
         p2HealthBarEmpty.setOrigin(0, 0);
         this.p2HealthBar.setOrigin(0, 0);
 
+        //let p1_wins = this.add.image(400, 200, 'p1_wins').setScale(8);
+        //p1_wins.setVisible(false)
 
-
+        // TODO: maybe a player health listener? For the health bars and also for the
+        // game over state? Gotta get more familiar with js listeners
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -73,6 +76,8 @@ export class Game extends Scene
         // Game over check
         if (this.player1.health <= 0 || this.player2.health <= 0) {
             //this.changeScene();
+            this.updateGameOver(this.player1);
+            this.updateGameOver(this.player2);
             return;
         }
         
@@ -93,8 +98,8 @@ export class Game extends Scene
             this.player2.hurtbox.setPosition(this.player2.sprite.x + (this.player2.direction * 100), this.player2.sprite.y + 16)
         }
 
-        this.updatePlayer(this.player1.sprite, this.p1keybinds);
-        this.updatePlayer(this.player2.sprite, this.p2keybinds);
+        this.updatePlayer(this.player1, this.p1keybinds);
+        this.updatePlayer(this.player2, this.p2keybinds);
     }
 
     initPlayer(x, y, direction) {
@@ -126,15 +131,27 @@ export class Game extends Scene
             child.body.debugBodyColor = 0x00AA00;
         });
 
-        let player = {sprite: sprite, hitboxes: hitboxes, direction: direction, health: 100};
+        let player = {
+            sprite: sprite,
+            hitboxes: hitboxes,
+            direction: direction,
+            health: 100,
+            isKnockedBack: false
+        };
 
         return player;
     }
 
     updatePlayer(player, keybinds) {
 
+        if (player.isKnockedBack) {
+            // Wait out knockback
+            player.sprite.anims.play('stop');
+            return;
+        }
+
         let isAttacking = false;
-        if (player.anims.currentAnim != null && player.anims.currentAnim.key == 'punch') {
+        if (player.sprite.anims.currentAnim != null && player.sprite.anims.currentAnim.key == 'punch') {
             //console.log(player.anims.currentAnim.key);
             isAttacking = true;
         }
@@ -142,44 +159,53 @@ export class Game extends Scene
         // attack animations take priority
         if (isAttacking) {
             // set velocity to zero if we land while attacking in air
-            if (player.body.touching.down) {
-                player.setVelocityX(0);
+            if (player.sprite.body.touching.down) {
+                player.sprite.setVelocityX(0);
             }
             return; 
         }
 
         // attack inputs have highest priority
         if (keybinds.get('punch').isDown) {
-            if (player.body.touching.down) {
-                player.setVelocityX(0);
+            if (player.sprite.body.touching.down) {
+                player.sprite.setVelocityX(0);
             }
             
-            player.anims.play('punch', true);
+            player.sprite.anims.play('punch', true);
             isAttacking = true;
         }
-        else if (keybinds.get('left').isDown && player.body.touching.down)
+        else if (keybinds.get('left').isDown && player.sprite.body.touching.down)
         {
-            player.setVelocityX(-160);
-            player.anims.play('move', true);
+            player.sprite.setVelocityX(-160);
+            player.sprite.anims.play('move', true);
         }
-        else if (keybinds.get('right').isDown && player.body.touching.down)
+        else if (keybinds.get('right').isDown && player.sprite.body.touching.down)
         {
-            player.setVelocityX(160);
-            player.anims.play('move', true);
+            player.sprite.setVelocityX(160);
+            player.sprite.anims.play('move', true);
         }
         else
         {
-            if (player.body.touching.down) {
-                player.setVelocityX(0);
+            if (player.sprite.body.touching.down) {
+                player.sprite.setVelocityX(0);
             }
             
-            player.anims.play('stop');
+            player.sprite.anims.play('stop');
         }
 
-        if (keybinds.get('up').isDown && player.body.touching.down)
+        if (keybinds.get('up').isDown && player.sprite.body.touching.down)
         {
-            player.setVelocityY(-500);
+            player.sprite.setVelocityY(-500);
         }
+    }
+
+    updateGameOver(player) {
+        // Game over state
+        if (player.sprite.body.touching.down) {
+            player.sprite.setVelocityX(0);
+        }
+        
+        player.sprite.anims.play('stop');
     }
 
     initKeybinds() {
@@ -216,8 +242,14 @@ export class Game extends Scene
                     // On hit action
                     player.hurtbox.destroy();
 
-                    // Deal damage
                     player.opponent.health -= 10;
+                    //player.opponent.sprite.setVelocityY(-100);
+                    player.opponent.sprite.setVelocityX(player.direction * 200);
+                    player.opponent.isKnockedBack = true;
+                    this.time.delayedCall(100, () => {
+                        player.opponent.isKnockedBack = false;
+                    });
+                    
                 });
             }
             else if (animation.key == 'punch' && frame.index == 4) {
