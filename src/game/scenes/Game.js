@@ -23,17 +23,24 @@ export class Game extends Scene
 
         platforms.create(400, 568, 'ground').setScale(2).refreshBody();
     
-        this.player1 = this.initPlayer(100, 300);
-        this.player2 = this.initPlayer(700, 300);
+        this.player1 = this.initPlayer(100, 300, 1);
+        this.player2 = this.initPlayer(700, 300, -1);
 
-        this.player2.setFlipX(true);
+        // TODO: is this bad?
+        this.player1.opponent = this.player2;
+        this.player2.opponent = this.player1;
 
-        this.player1.setDebug(true);
-        this.player2.setDebug(false);
+        this.player2.sprite.setFlipX(true);
+
+        this.player1.sprite.setDebug(false);
+        this.player2.sprite.setDebug(false);
+
+        this.setupHitboxes(this.player1);
+        this.setupHitboxes(this.player2);
         
-        this.physics.add.collider(this.player1, platforms);
-        this.physics.add.collider(this.player2, platforms);
-        this.physics.add.collider(this.player1, this.player2);
+        this.physics.add.collider(this.player1.sprite, platforms);
+        this.physics.add.collider(this.player2.sprite, platforms);
+        this.physics.add.collider(this.player1.sprite, this.player2.sprite);
 
         this.initKeybinds();
 
@@ -41,31 +48,44 @@ export class Game extends Scene
 
         // hitbox experiments
 
-        this.hitbox = this.add.zone(100, 300).setSize(128, 224);
+        /*this.hitbox = this.add.zone(100, 300).setSize(128, 224);
         this.physics.world.enable(this.hitbox);
         this.hitbox.body.setAllowGravity(false);
-        this.hitbox.body.debugBodyColor = 0x00AA00;
+        this.hitbox.body.debugBodyColor = 0x00AA00;*/
 
-        this.hurtbox = this.add.zone(700, 300).setSize(32, 32);
+        /*this.hurtbox = this.add.zone(700, 300).setSize(32, 32);
         this.physics.world.enable(this.hurtbox);
         this.hurtbox.body.setAllowGravity(false);
-        this.hurtbox.body.debugBodyColor = 0xFF0000;
-
+        this.hurtbox.body.debugBodyColor = 0xFF0000;*/
+        
+        
         // group of attack hitbox zones
         // group of player hitbox zones
         // on attack, add new zone to group
 
-        this.player1.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
+        /*this.player.sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
             if (animation.key == 'punch' && frame.index == 2) {
                 console.log("spawn hitbox");
+
+                this.player1.hurtbox = this.add.zone(this.player1.sprite.x + 100, this.player1.sprite.y + 16).setSize(32, 32);
+                this.physics.world.enable(this.player1.hurtbox);
+                this.player1.hurtbox.body.setAllowGravity(false);
+                this.player1.hurtbox.body.debugBodyColor = 0xFF0000;
+
+                this.physics.add.overlap(this.player2.hitboxes, this.player1.hurtbox, (hitbox, hurtbox) => {
+                    console.log("hit");
+                    this.player1.hurtbox.destroy();
+                });
             }
-        });
+            else if (animation.key == 'punch' && frame.index == 4) {
+                this.player1.hurtbox.destroy();
+            }
+        });*/
 
-        this.physics.add.overlap(this.player1, this.hurtbox, overlapCallback);
-
-        function overlapCallback(hitbox, hurtbox) {
+        /*this.physics.add.overlap(this.player1.hitboxes, this.hurtbox, (hitbox, hurtbox) => {
             console.log("hit");
-        }
+        });*/
+
 
 
         EventBus.emit('current-scene-ready', this);
@@ -77,34 +97,69 @@ export class Game extends Scene
             return;
         }
 
-        this.hitbox.setPosition(this.player1.x, this.player1.y + 16);
-        this.hurtbox.setPosition(this.player2.x - 120, this.player2.y + 16);
+        //this.player1.hitboxes.ch.setPosition(this.player1.sprite.x, this.player1.sprite.y + 16);
+        this.player1.hitboxes.children.iterate((child) => {
+            child.setPosition(this.player1.sprite.x, this.player1.sprite.y + 16);
+        });
 
-        this.updatePlayer(this.player1, this.p1keybinds);
-        this.updatePlayer(this.player2, this.p2keybinds);
+        this.player2.hitboxes.children.iterate((child) => {
+            child.setPosition(this.player2.sprite.x, this.player2.sprite.y + 16);
+        });
+
+        if (this.player1.hurtbox) {
+            this.player1.hurtbox.setPosition(this.player1.sprite.x + 100, this.player1.sprite.y + 16)
+        }
+        
+
+
+        //this.hurtbox.setPosition(this.player2.sprite.x - 100, this.player2.sprite.y + 16);
+
+        this.updatePlayer(this.player1.sprite, this.p1keybinds);
+        this.updatePlayer(this.player2.sprite, this.p2keybinds);
     }
 
-    initPlayer(x, y) {
-        let player = this.physics.add.sprite(x, y, 'fighter').setScale(8);
+    initPlayer(x, y, direction) {
+        let sprite = this.physics.add.sprite(x, y, 'fighter').setScale(8);
 
-        player.body.setSize(16, 28);
-        player.body.setOffset(8, 4);
+        sprite.body.setSize(16, 28);
+        sprite.body.setOffset(8, 4);
         
-        player.body.setCollideWorldBounds(true);
-        player.body.setGravityY(500);
+        sprite.body.setCollideWorldBounds(true);
+        sprite.body.setGravityY(500);
 
         // switch to stop animation when animation is complete
-        player.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function (animation) {
+        sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function (animation) {
             if (animation.key == 'punch') {
                 console.log('punch ended');
-                player.anims.play('stop');
+                sprite.anims.play('stop');
             }
         });
 
-        return player
+        // create hitboxes
+        // TODO: I think a group isnt ideal, maybe just a tuple since I might wanna separate high
+        // and low hitbox collisions
+        let hitboxes = this.physics.add.group();
+        let hitbox = this.add.zone(x, y).setSize(128, 224);
+        hitboxes.add(hitbox);
+
+        hitboxes.children.iterate((child) => {
+            this.physics.world.enable(child);
+            child.body.setAllowGravity(false);
+            child.body.debugBodyColor = 0x00AA00;
+        });
+
+        let player = {sprite: sprite, hitboxes: hitboxes, direction: direction};
+
+        return player;
     }
 
     updatePlayer(player, keybinds) {
+        // need player not sprite
+        /*console.log(player.direction);
+        if (player.direction == -1) {
+            console.log("flipped");
+            player.sprite.setFlipX(true);
+        }*/
         
         let isAttacking = false;
         if (player.anims.currentAnim != null && player.anims.currentAnim.key == 'punch') {
@@ -175,6 +230,27 @@ export class Game extends Scene
         this.p2keybinds.set('down', this.keys.K);
         this.p2keybinds.set('right', this.keys.L);
         this.p2keybinds.set('punch', this.keys.U);
+    }
+
+    setupHitboxes(player) {
+        player.sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
+            if (animation.key == 'punch' && frame.index == 2) {
+                console.log("spawn hitbox");
+
+                player.hurtbox = this.add.zone(player.sprite.x + (player.direction * 100), player.sprite.y + 16).setSize(32, 32);
+                this.physics.world.enable(player.hurtbox);
+                player.hurtbox.body.setAllowGravity(false);
+                player.hurtbox.body.debugBodyColor = 0xFF0000;
+
+                this.physics.add.overlap(player.opponent.hitboxes, player.hurtbox, (hitbox, hurtbox) => {
+                    console.log("hit");
+                    player.hurtbox.destroy();
+                });
+            }
+            else if (animation.key == 'punch' && frame.index == 4) {
+                player.hurtbox.destroy();
+            }
+        });
     }
 
     changeScene ()
