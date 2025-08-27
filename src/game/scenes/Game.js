@@ -3,8 +3,6 @@ import { Scene } from 'phaser';
 
 export class Game extends Scene
 {
-    player;
-    keys;
     gameOver = false;
     p1keybinds = new Map();
     p2keybinds = new Map();
@@ -44,47 +42,21 @@ export class Game extends Scene
 
         this.initKeybinds();
 
+        // UI (health bars)
+        // To decrease health:
+        //      p1: increase x, decrease width by same amount
+        //      p2: decrease width
+        // A full health bar is 300 pixels
+        let p1HealthBarEmpty = this.add.rectangle(50, 100, 300, 10, 0x444444);
+        this.p1HealthBar = this.add.rectangle(50, 100, 300, 10, 0xFFFF00);
+        p1HealthBarEmpty.setOrigin(0, 0);
+        this.p1HealthBar.setOrigin(0, 0);
 
+        let p2HealthBarEmpty = this.add.rectangle(450, 100, 300, 10, 0x444444);
+        this.p2HealthBar = this.add.rectangle(450, 100, 300, 10, 0xFFFF00);
+        p2HealthBarEmpty.setOrigin(0, 0);
+        this.p2HealthBar.setOrigin(0, 0);
 
-        // hitbox experiments
-
-        /*this.hitbox = this.add.zone(100, 300).setSize(128, 224);
-        this.physics.world.enable(this.hitbox);
-        this.hitbox.body.setAllowGravity(false);
-        this.hitbox.body.debugBodyColor = 0x00AA00;*/
-
-        /*this.hurtbox = this.add.zone(700, 300).setSize(32, 32);
-        this.physics.world.enable(this.hurtbox);
-        this.hurtbox.body.setAllowGravity(false);
-        this.hurtbox.body.debugBodyColor = 0xFF0000;*/
-        
-        
-        // group of attack hitbox zones
-        // group of player hitbox zones
-        // on attack, add new zone to group
-
-        /*this.player.sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
-            if (animation.key == 'punch' && frame.index == 2) {
-                console.log("spawn hitbox");
-
-                this.player1.hurtbox = this.add.zone(this.player1.sprite.x + 100, this.player1.sprite.y + 16).setSize(32, 32);
-                this.physics.world.enable(this.player1.hurtbox);
-                this.player1.hurtbox.body.setAllowGravity(false);
-                this.player1.hurtbox.body.debugBodyColor = 0xFF0000;
-
-                this.physics.add.overlap(this.player2.hitboxes, this.player1.hurtbox, (hitbox, hurtbox) => {
-                    console.log("hit");
-                    this.player1.hurtbox.destroy();
-                });
-            }
-            else if (animation.key == 'punch' && frame.index == 4) {
-                this.player1.hurtbox.destroy();
-            }
-        });*/
-
-        /*this.physics.add.overlap(this.player1.hitboxes, this.hurtbox, (hitbox, hurtbox) => {
-            console.log("hit");
-        });*/
 
 
 
@@ -93,11 +65,18 @@ export class Game extends Scene
 
     update ()
     {
-        if (this.gameOver) {
+        // Match healthbars to health
+        this.p1HealthBar.width = Math.max(this.player1.health * 3, 0);
+        this.p1HealthBar.x = 50 + (300 - Math.max(this.player1.health * 3, 0));
+        this.p2HealthBar.width = this.player2.health * 3;
+
+        // Game over check
+        if (this.player1.health <= 0 || this.player2.health <= 0) {
+            //this.changeScene();
             return;
         }
-
-        //this.player1.hitboxes.ch.setPosition(this.player1.sprite.x, this.player1.sprite.y + 16);
+        
+        // Move hitboxes and hurtboxes based on player positions
         this.player1.hitboxes.children.iterate((child) => {
             child.setPosition(this.player1.sprite.x, this.player1.sprite.y + 16);
         });
@@ -107,12 +86,12 @@ export class Game extends Scene
         });
 
         if (this.player1.hurtbox) {
-            this.player1.hurtbox.setPosition(this.player1.sprite.x + 100, this.player1.sprite.y + 16)
+            this.player1.hurtbox.setPosition(this.player1.sprite.x + (this.player1.direction * 100), this.player1.sprite.y + 16)
         }
-        
 
-
-        //this.hurtbox.setPosition(this.player2.sprite.x - 100, this.player2.sprite.y + 16);
+        if (this.player2.hurtbox) {
+            this.player2.hurtbox.setPosition(this.player2.sprite.x + (this.player2.direction * 100), this.player2.sprite.y + 16)
+        }
 
         this.updatePlayer(this.player1.sprite, this.p1keybinds);
         this.updatePlayer(this.player2.sprite, this.p2keybinds);
@@ -130,7 +109,6 @@ export class Game extends Scene
         // switch to stop animation when animation is complete
         sprite.on(Phaser.Animations.Events.ANIMATION_COMPLETE, function (animation) {
             if (animation.key == 'punch') {
-                console.log('punch ended');
                 sprite.anims.play('stop');
             }
         });
@@ -148,19 +126,13 @@ export class Game extends Scene
             child.body.debugBodyColor = 0x00AA00;
         });
 
-        let player = {sprite: sprite, hitboxes: hitboxes, direction: direction};
+        let player = {sprite: sprite, hitboxes: hitboxes, direction: direction, health: 100};
 
         return player;
     }
 
     updatePlayer(player, keybinds) {
-        // need player not sprite
-        /*console.log(player.direction);
-        if (player.direction == -1) {
-            console.log("flipped");
-            player.sprite.setFlipX(true);
-        }*/
-        
+
         let isAttacking = false;
         if (player.anims.currentAnim != null && player.anims.currentAnim.key == 'punch') {
             //console.log(player.anims.currentAnim.key);
@@ -235,16 +207,17 @@ export class Game extends Scene
     setupHitboxes(player) {
         player.sprite.on(Phaser.Animations.Events.ANIMATION_UPDATE, (animation, frame) => {
             if (animation.key == 'punch' && frame.index == 2) {
-                console.log("spawn hitbox");
-
                 player.hurtbox = this.add.zone(player.sprite.x + (player.direction * 100), player.sprite.y + 16).setSize(32, 32);
                 this.physics.world.enable(player.hurtbox);
                 player.hurtbox.body.setAllowGravity(false);
                 player.hurtbox.body.debugBodyColor = 0xFF0000;
 
                 this.physics.add.overlap(player.opponent.hitboxes, player.hurtbox, (hitbox, hurtbox) => {
-                    console.log("hit");
+                    // On hit action
                     player.hurtbox.destroy();
+
+                    // Deal damage
+                    player.opponent.health -= 10;
                 });
             }
             else if (animation.key == 'punch' && frame.index == 4) {
