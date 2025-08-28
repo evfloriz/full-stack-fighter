@@ -71,6 +71,10 @@ export class Game extends Scene
         this.isPlayer1 = this.registry.get('isPlayer1');
         this.player = this.isPlayer1 ? this.player1 : this.player2;
 
+        // Init keybinds so player updates dont fail
+        this.playerInputs = this.getInputs(this.p1keybinds);
+        this.opponentInputs = this.getInputs(this.p2keybinds);
+
         
 
         EventBus.emit('current-scene-ready', this);
@@ -110,9 +114,16 @@ export class Game extends Scene
 
         //this.updatePlayer(this.player1, this.p1keybinds);
         //this.updatePlayer(this.player2, this.p2keybinds);
-        this.updatePlayerLocal(this.player, this.p1keybinds);
-        this.sendPlayerData(this.player);
-        this.receiveOpponentData(this.player.opponent);
+        this.playerInputs = this.getInputs(this.p1keybinds);
+        //console.log(playerInputs);
+
+        this.updatePlayerLocal(this.player, this.playerInputs);
+        this.sendPlayerData(this.playerInputs);
+
+        
+
+        this.receiveOpponentData();
+        this.updatePlayerLocal(this.player.opponent, this.opponentInputs)
     }
 
     initPlayer(x, y, direction) {
@@ -155,7 +166,7 @@ export class Game extends Scene
         return player;
     }
 
-    updatePlayerLocal(player, keybinds) {
+    updatePlayerLocal(player, inputs) {
 
         if (player.isKnockedBack) {
             // Wait out knockback
@@ -179,7 +190,7 @@ export class Game extends Scene
         }
 
         // attack inputs have highest priority
-        if (keybinds.get('punch').isDown) {
+        if (inputs.punch) {
             if (player.sprite.body.touching.down) {
                 player.sprite.setVelocityX(0);
             }
@@ -187,12 +198,12 @@ export class Game extends Scene
             player.sprite.anims.play('punch', true);
             isAttacking = true;
         }
-        else if (keybinds.get('left').isDown && player.sprite.body.touching.down)
+        else if (inputs.left && player.sprite.body.touching.down)
         {
             player.sprite.setVelocityX(-160);
             player.sprite.anims.play('move', true);
         }
-        else if (keybinds.get('right').isDown && player.sprite.body.touching.down)
+        else if (inputs.right && player.sprite.body.touching.down)
         {
             player.sprite.setVelocityX(160);
             player.sprite.anims.play('move', true);
@@ -206,24 +217,24 @@ export class Game extends Scene
             player.sprite.anims.play('stop');
         }
 
-        if (keybinds.get('up').isDown && player.sprite.body.touching.down)
+        if (inputs.up && player.sprite.body.touching.down)
         {
             player.sprite.setVelocityY(-500);
         }
     }
 
-    sendPlayerData(player) {
-        let eventName = this.isPlayer1 ? 'player1_position' : 'player2_position';
+    sendPlayerData(inputs) {
+        let eventName = this.isPlayer1 ? 'player1_inputs' : 'player2_inputs';
 
-        this.socket.emit(eventName, {'x': player.sprite.x, 'y': player.sprite.y});
+        this.socket.emit(eventName, inputs);
     }
 
-    receiveOpponentData(player) {
-        let eventName = !this.isPlayer1 ? 'player1_position' : 'player2_position';
+    receiveOpponentData() {
+        let eventName = !this.isPlayer1 ? 'player1_inputs' : 'player2_inputs';
 
         this.socket.on(eventName, (data) => {
-            player.sprite.x = data.x;
-            player.sprite.y = data.y;
+            //console.log(data);
+            this.opponentInputs = data;
         })
     }
 
@@ -256,6 +267,17 @@ export class Game extends Scene
         this.p2keybinds.set('down', this.keys.K);
         this.p2keybinds.set('right', this.keys.L);
         this.p2keybinds.set('punch', this.keys.U);
+    }
+
+    getInputs(keybinds) {
+        let inputs = {
+            up: keybinds.get('up').isDown,
+            down: keybinds.get('down').isDown,
+            left: keybinds.get('left').isDown,
+            right: keybinds.get('right').isDown,
+            punch: keybinds.get('punch').isDown
+        }
+        return inputs;
     }
 
     setupHitboxes(player) {

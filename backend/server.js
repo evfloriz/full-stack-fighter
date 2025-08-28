@@ -40,13 +40,13 @@ io.on('connection', (socket) => {
     socket.emit('isPlayer1', isPlayer1);
 
 
-    socket.on('player1_position', (data) => {
+    socket.on('player1_inputs', (data) => {
         //console.log('x: ' + data.x + ' y: ' + data.y);
-        io.to(room).emit('player1_position', data);
+        io.to(room).emit('player1_inputs', data);
     })
 
-    socket.on('player2_position', (data) => {
-        io.to(room).emit('player2_position', data);
+    socket.on('player2_inputs', (data) => {
+        io.to(room).emit('player2_inputs', data);
     })
 
     
