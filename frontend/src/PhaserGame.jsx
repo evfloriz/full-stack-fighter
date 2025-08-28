@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef } from 'react';
 import StartGame from './game/main';
 import { EventBus } from './game/EventBus';
-import { io } from 'socket.io-client'
 
 export const PhaserGame = forwardRef(function PhaserGame ({ currentActiveScene }, ref)
 {
@@ -32,12 +31,6 @@ export const PhaserGame = forwardRef(function PhaserGame ({ currentActiveScene }
     }, [ref]);
 
     useEffect(() => {
-
-        const socket = io("http://localhost:8080");
-
-        socket.on("connect", () => {
-            console.log("Connected: ", socket.id);
-        })
 
         EventBus.on('current-scene-ready', (currentScene) => {
 

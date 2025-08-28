@@ -63,6 +63,11 @@ export class Game extends Scene
         // TODO: maybe a player health listener? For the health bars and also for the
         // game over state? Gotta get more familiar with js listeners
 
+
+        // initialize the socket
+        this.socket = this.registry.get('socket');
+        this.socket.emit('test', 'test_value');
+
         EventBus.emit('current-scene-ready', this);
     }
 
