@@ -33,6 +33,11 @@ export class MainMenu extends Scene
             console.log(msg);
         })
 
+        socket.on('isPlayer1', (msg) => {
+            console.log('isPlayer1: ' + msg);
+            this.registry.set('isPlayer1', msg);
+        });
+
         this.registry.set('socket', socket);
         
         EventBus.emit('current-scene-ready', this);

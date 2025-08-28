@@ -66,7 +66,12 @@ export class Game extends Scene
 
         // initialize the socket
         this.socket = this.registry.get('socket');
-        this.socket.emit('test', 'test_value');
+        //this.socket.emit('test', 'test_value');
+
+        this.isPlayer1 = this.registry.get('isPlayer1');
+        this.player = this.isPlayer1 ? this.player1 : this.player2;
+
+        
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -103,8 +108,11 @@ export class Game extends Scene
             this.player2.hurtbox.setPosition(this.player2.sprite.x + (this.player2.direction * 100), this.player2.sprite.y + 16)
         }
 
-        this.updatePlayer(this.player1, this.p1keybinds);
-        this.updatePlayer(this.player2, this.p2keybinds);
+        //this.updatePlayer(this.player1, this.p1keybinds);
+        //this.updatePlayer(this.player2, this.p2keybinds);
+        this.updatePlayerLocal(this.player, this.p1keybinds);
+        this.sendPlayerData(this.player);
+        this.receiveOpponentData(this.player.opponent);
     }
 
     initPlayer(x, y, direction) {
@@ -147,7 +155,7 @@ export class Game extends Scene
         return player;
     }
 
-    updatePlayer(player, keybinds) {
+    updatePlayerLocal(player, keybinds) {
 
         if (player.isKnockedBack) {
             // Wait out knockback
@@ -202,6 +210,21 @@ export class Game extends Scene
         {
             player.sprite.setVelocityY(-500);
         }
+    }
+
+    sendPlayerData(player) {
+        let eventName = this.isPlayer1 ? 'player1_position' : 'player2_position';
+
+        this.socket.emit(eventName, {'x': player.sprite.x, 'y': player.sprite.y});
+    }
+
+    receiveOpponentData(player) {
+        let eventName = !this.isPlayer1 ? 'player1_position' : 'player2_position';
+
+        this.socket.on(eventName, (data) => {
+            player.sprite.x = data.x;
+            player.sprite.y = data.y;
+        })
     }
 
     updateGameOver(player) {
