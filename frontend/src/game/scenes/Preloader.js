@@ -33,14 +33,12 @@ export class Preloader extends Scene
         //  Load the assets for the game - Replace with your own assets
         this.load.setPath('assets');
 
-        this.load.image('bomb', 'bomb.png');
         this.load.image('ground', 'platform.png');
-        this.load.image('star', 'star.png');
-        this.load.spritesheet('dude', 'dude.png', {frameWidth:32, frameHeight:48});
+        this.load.image('logo', 'logo.png');
 
         this.load.image('p1_wins', 'p1_wins.png');
         this.load.image('p2_wins', 'p2_wins.png');
-        this.load.spritesheet('fighter', 'stickfighter2.png', {frameWidth:32, frameHeight:32});
+        this.load.spritesheet('fighter', 'stickfighter.png', {frameWidth:32, frameHeight:32});
     }
 
     create ()

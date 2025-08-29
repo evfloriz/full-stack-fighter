@@ -1,17 +1,23 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 
 const app = express();
 const server = createServer(app);
-/*const io = new Server(server, {
+const io = new Server(server, {
     cors: {
         origin: 'http://localhost:8080',
         methods:['GET', 'POST']
     }
-});*/
+});
 
-const io = new Server(server);
+// Serve static content
+//const __dirname = dirname(fileURLToPath(import.meta.url));
+//app.use(express.static(join(__dirname, 'dist')));
+
+//const io = new Server(server);
 
 const pairs = [];
 let index = 0;
@@ -71,5 +77,5 @@ p2 sends xy data for itself, received by p1
 });*/
 
 server.listen(3000, () => {
-    console.log('server running at localhost:3000');
+    console.log('Server running at localhost:3000');
 });

@@ -75,7 +75,31 @@ export class Game extends Scene
         this.playerInputs = this.getInputs(this.p1keybinds);
         this.opponentInputs = this.getInputs(this.p2keybinds);
 
-        
+        this.returnToMenuButton = this.add.text(400, 300, 'Return to Main Menu', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: '#111111',
+            align: 'center',
+            backgroundColor: '#7799BB'
+        })
+        .setPadding(16)
+        .setOrigin(0.5)
+        .setInteractive()
+        .on('pointerover', () => {
+            this.returnToMenuButton.setBackgroundColor('#557799');
+        })
+        .on('pointerout', () => {
+            this.returnToMenuButton.setBackgroundColor('#7799BB');
+        })
+        .on('pointerdown', () => {
+            this.changeScene('Game');
+        })
+        .setVisible(false);
+
+        this.p1WinImage = this.add.image(400, 200, 'p1_wins').setScale(8);
+        this.p2WinImage = this.add.image(400, 200, 'p2_wins').setScale(8);
+        this.p1WinImage.setVisible(false);
+        this.p2WinImage.setVisible(false);
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -89,9 +113,8 @@ export class Game extends Scene
 
         // Game over check
         if (this.player1.health <= 0 || this.player2.health <= 0) {
-            //this.changeScene();
-            this.updateGameOver(this.player1);
-            this.updateGameOver(this.player2);
+            let didPlayer1Win = this.player1.health > 0;
+            this.updateGameOver(didPlayer1Win);
             return;
         }
         
@@ -119,8 +142,6 @@ export class Game extends Scene
 
         this.updatePlayerLocal(this.player, this.playerInputs);
         this.sendPlayerData(this.playerInputs);
-
-        
 
         this.receiveOpponentData();
         this.updatePlayerLocal(this.player.opponent, this.opponentInputs)
@@ -238,13 +259,26 @@ export class Game extends Scene
         })
     }
 
-    updateGameOver(player) {
+    updateGameOver(didPlayer1Win) {
         // Game over state
-        if (player.sprite.body.touching.down) {
-            player.sprite.setVelocityX(0);
+        if (this.player1.sprite.body.touching.down) {
+            this.player1.sprite.setVelocityX(0);
         }
-        
-        player.sprite.anims.play('stop');
+        this.player1.sprite.anims.play('stop');
+
+        if (this.player2.sprite.body.touching.down) {
+            this.player2.sprite.setVelocityX(0);
+        }
+        this.player2.sprite.anims.play('stop');
+
+        if (didPlayer1Win) {
+            this.p1WinImage.setVisible(true);
+        }
+        else {
+            this.p2WinImage.setVisible(true);
+        }
+
+        this.returnToMenuButton.setVisible(true);
     }
 
     initKeybinds() {
@@ -308,8 +342,8 @@ export class Game extends Scene
         });
     }
 
-    changeScene ()
+    changeScene()
     {
-        this.scene.start('GameOver');
+        this.scene.start('MainMenu');
     }
 }

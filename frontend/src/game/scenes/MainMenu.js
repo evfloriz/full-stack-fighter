@@ -15,13 +15,35 @@ export class MainMenu extends Scene
     {
         this.add.image(400, 300, 'background');
 
-        this.logo = this.add.image(400, 244, 'star').setDepth(100);
+        this.add.image(400, 244, 'logo').setScale(8);
 
-        this.add.text(400, 366, 'Main Menu', {
+        /*this.add.text(400, 366, 'Main Menu', {
             fontFamily: 'Arial Black', fontSize: 38, color: '#ffffff',
             stroke: '#000000', strokeThickness: 8,
             align: 'center'
-        }).setDepth(100).setOrigin(0.5);
+        }).setDepth(100).setOrigin(0.5);*/
+
+        const button = this.add.text(400, 400, 'Play Local', {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            color: '#111111',
+            align: 'center',
+            backgroundColor: '#7799BB'
+        })
+        .setPadding(16)
+        .setOrigin(0.5)
+        .setInteractive()
+        .on('pointerover', () => {
+            button.setBackgroundColor('#557799');
+        })
+        .on('pointerout', () => {
+            button.setBackgroundColor('#7799BB');
+        })
+        .on('pointerdown', () => {
+            this.changeScene('Game');
+        })
+        .setVisible(true);
+        
 
         const socket = io();
 
@@ -43,9 +65,9 @@ export class MainMenu extends Scene
         EventBus.emit('current-scene-ready', this);
     }
 
-    changeScene ()
+    changeScene(sceneName)
     {
-        this.scene.start('Game');
+        this.scene.start(sceneName);
     }
 
 }
