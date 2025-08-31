@@ -19,38 +19,31 @@ const io = new Server(server, {
 
 //const io = new Server(server);
 
-const pairs = [];
-let index = 0;
+let roomIndex = 0;
 
 io.on('connection', (socket) => {
-    // set connection index to whatever index is
-    let clientIndex = index;
-    index++;
-
-    // add it to the list of pairs
-    pairs.push(socket);
-
-    let roomIndex = Math.floor(clientIndex / 2);
     let room = 'room' + roomIndex;
 
     socket.join(room);
 
     let users = io.sockets.adapter.rooms.get(room);
-    //console.log(users.size);
-
-    // determine p1 and p2
-    let isPlayer1 = (clientIndex % 2 == 0);
+    
+    // Determine p1 and p2 based on size of room after joining
+    let isPlayer1 = (users.size % 2 == 1);
     socket.emit('isPlayer1', isPlayer1);
     
     if (users.size == 2) {
+        // Increment the room index, looping at 1000
+        roomIndex++;
+        if (roomIndex > 1000) {
+            roomIndex = 0;
+        }
+
         io.to(room).emit('isRoomReady', true);
     }
 
-    console.log('user connected, client index ' + clientIndex);
-
     socket.on('confirm', () => {
         socket.on('player1_inputs', (data) => {
-            //console.log('x: ' + data.x + ' y: ' + data.y);
             io.to(room).emit('player1_inputs', data);
         });
 
@@ -60,7 +53,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-        console.log('user disconnected');
+        // Do nothing for now
     });
 })
 

@@ -11,7 +11,8 @@ export class ConnectToServer extends Scene
 
     create ()
     {
-        this.add.image(400, 300, 'background');
+        this.add.image(400, 300, 'background').setAlpha(0.5);
+        this.cameras.main.setBackgroundColor(0xffffff);
 
         this.add.text(400, 300, 'Searching...', {
             fontFamily: 'Arial',
