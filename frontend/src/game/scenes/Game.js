@@ -4,8 +4,8 @@ import { Scene } from 'phaser';
 export class Game extends Scene
 {
     gameOverCheck = false;
-    p1keybinds = new Map();
-    p2keybinds = new Map();
+    p1Keybinds = new Map();
+    p2Keybinds = new Map();
     
     constructor ()
     {
@@ -57,17 +57,14 @@ export class Game extends Scene
         p2HealthBarEmpty.setOrigin(0, 0);
         this.p2HealthBar.setOrigin(0, 0);
 
-        //let p1_wins = this.add.image(400, 200, 'p1_wins').setScale(8);
-        //p1_wins.setVisible(false)
-
         // TODO: maybe a player health listener? For the health bars and also for the
         // game over state? Gotta get more familiar with js listeners
 
         // Init keybinds so player updates dont fail
-        this.playerInputs = this.getInputs(this.p1keybinds);
-        this.opponentInputs = this.getInputs(this.p2keybinds);
+        this.playerInputs = this.getInputs(this.p1Keybinds);
+        this.opponentInputs = this.getInputs(this.p2Keybinds);
 
-        this.returnToMenuButton = this.add.text(400, 300, 'Return to Main Menu', {
+        this.returnToMenuButton = this.add.text(400, 270, 'Return to Main Menu', {
             fontFamily: 'Arial',
             fontSize: '24px',
             color: '#111111',
@@ -139,7 +136,7 @@ export class Game extends Scene
             this.player2.hurtbox.setPosition(this.player2.sprite.x + (this.player2.direction * 100), this.player2.sprite.y + 16)
         }
 
-        this.playerInputs = this.getInputs(this.p1keybinds);
+        this.playerInputs = this.getInputs(this.p1Keybinds);
 
         this.updatePlayerLocal(this.player, this.playerInputs);
         
@@ -149,7 +146,7 @@ export class Game extends Scene
             this.receiveOpponentData();
         }
         else {
-            this.opponentInputs = this.getInputs(this.p2keybinds);
+            this.opponentInputs = this.getInputs(this.p2Keybinds);
         }
         
         this.updatePlayerLocal(this.player.opponent, this.opponentInputs)
@@ -298,17 +295,17 @@ export class Game extends Scene
         
         this.keys = this.input.keyboard.addKeys('W,A,S,D,E,I,J,K,L,U');
 
-        this.p1keybinds.set('up', this.keys.W);
-        this.p1keybinds.set('left', this.keys.A);
-        this.p1keybinds.set('down', this.keys.S);
-        this.p1keybinds.set('right', this.keys.D);
-        this.p1keybinds.set('punch', this.keys.E);
+        this.p1Keybinds.set('up', this.keys.W);
+        this.p1Keybinds.set('left', this.keys.A);
+        this.p1Keybinds.set('down', this.keys.S);
+        this.p1Keybinds.set('right', this.keys.D);
+        this.p1Keybinds.set('punch', this.keys.E);
 
-        this.p2keybinds.set('up',this.keys.I);
-        this.p2keybinds.set('left', this.keys.J);
-        this.p2keybinds.set('down', this.keys.K);
-        this.p2keybinds.set('right', this.keys.L);
-        this.p2keybinds.set('punch', this.keys.U);
+        this.p2Keybinds.set('up',this.keys.I);
+        this.p2Keybinds.set('left', this.keys.J);
+        this.p2Keybinds.set('down', this.keys.K);
+        this.p2Keybinds.set('right', this.keys.L);
+        this.p2Keybinds.set('punch', this.keys.U);
     }
 
     getInputs(keybinds) {

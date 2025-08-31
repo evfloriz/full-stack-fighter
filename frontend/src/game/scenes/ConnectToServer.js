@@ -47,11 +47,13 @@ export class ConnectToServer extends Scene
         this.registry.set('socket', this.socket);
 
         this.socket.on("connect", () => {
-            console.log("Connected: ", this.socket.id);
+            // Empty for now
+            
+            //console.log("Connected to server");
         })
 
         this.socket.on('isPlayer1', (msg) => {
-            console.log('isPlayer1: ' + msg);
+            //console.log('isPlayer1: ' + msg);
             this.registry.set('isPlayer1', msg);
         });
 
