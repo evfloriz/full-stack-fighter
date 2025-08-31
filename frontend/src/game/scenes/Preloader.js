@@ -38,6 +38,9 @@ export class Preloader extends Scene
 
         this.load.image('p1_wins', 'p1_wins.png');
         this.load.image('p2_wins', 'p2_wins.png');
+        this.load.image('p1_controls', 'p1_controls.png');
+        this.load.image('p2_controls', 'p2_controls.png');
+
         this.load.spritesheet('fighter', 'stickfighter.png', {frameWidth:32, frameHeight:32});
     }
 

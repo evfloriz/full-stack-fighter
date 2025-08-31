@@ -16,6 +16,9 @@ export class MainMenu extends Scene
 
         this.add.image(400, 244, 'logo').setScale(8);
 
+        this.add.image(150, 450, 'p1_controls').setScale(4);
+        this.add.image(650, 450, 'p2_controls').setScale(4);
+
         const localButton = this.add.text(400, 400, 'Play Local', {
             fontFamily: 'Arial',
             fontSize: '24px',
