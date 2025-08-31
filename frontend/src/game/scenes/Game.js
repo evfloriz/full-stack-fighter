@@ -63,14 +63,6 @@ export class Game extends Scene
         // TODO: maybe a player health listener? For the health bars and also for the
         // game over state? Gotta get more familiar with js listeners
 
-
-        // initialize the socket
-        this.socket = this.registry.get('socket');
-        //this.socket.emit('test', 'test_value');
-
-        this.isPlayer1 = this.registry.get('isPlayer1');
-        this.player = this.isPlayer1 ? this.player1 : this.player2;
-
         // Init keybinds so player updates dont fail
         this.playerInputs = this.getInputs(this.p1keybinds);
         this.opponentInputs = this.getInputs(this.p2keybinds);
@@ -100,6 +92,18 @@ export class Game extends Scene
         this.p2WinImage = this.add.image(400, 200, 'p2_wins').setScale(8);
         this.p1WinImage.setVisible(false);
         this.p2WinImage.setVisible(false);
+
+        // initialize the socket
+        this.socket = this.registry.get('socket');
+        //this.socket.emit('test', 'test_value');
+
+        // If offline, set this.player to player1
+        // If online, check
+        this.isPlayer1 = true;
+        if (this.socket) {
+            this.isPlayer1 = this.registry.get('isPlayer1');
+        }
+        this.player = this.isPlayer1 ? this.player1 : this.player2;
 
         EventBus.emit('current-scene-ready', this);
     }
@@ -135,15 +139,19 @@ export class Game extends Scene
             this.player2.hurtbox.setPosition(this.player2.sprite.x + (this.player2.direction * 100), this.player2.sprite.y + 16)
         }
 
-        //this.updatePlayer(this.player1, this.p1keybinds);
-        //this.updatePlayer(this.player2, this.p2keybinds);
         this.playerInputs = this.getInputs(this.p1keybinds);
-        //console.log(playerInputs);
 
         this.updatePlayerLocal(this.player, this.playerInputs);
-        this.sendPlayerData(this.playerInputs);
-
-        this.receiveOpponentData();
+        
+        // Get online data if playing online
+        if (this.socket) {
+            this.sendPlayerData(this.playerInputs);
+            this.receiveOpponentData();
+        }
+        else {
+            this.opponentInputs = this.getInputs(this.p2keybinds);
+        }
+        
         this.updatePlayerLocal(this.player.opponent, this.opponentInputs)
     }
 
