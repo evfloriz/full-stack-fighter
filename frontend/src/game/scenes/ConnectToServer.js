@@ -43,7 +43,8 @@ export class ConnectToServer extends Scene
         .setVisible(true);
         
 
-        this.socket = io();
+        //this.socket = io();
+        this.socket = io('https://full-stack-fighter-server.onrender.com');
         this.registry.set('socket', this.socket);
 
         this.socket.on("connect", () => {

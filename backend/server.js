@@ -8,7 +8,8 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:8080',
+        //origin: 'http://localhost:8080',
+        origin: 'https://full-stack-fighter.onrender.com/',
         methods:['GET', 'POST']
     }
 });
@@ -58,5 +59,5 @@ io.on('connection', (socket) => {
 })
 
 server.listen(3000, () => {
-    console.log('Server running at localhost:3000');
+    console.log('Server running at https://full-stack-fighter-server.onrender.com:3000');
 });
