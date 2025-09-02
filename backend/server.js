@@ -9,7 +9,7 @@ const server = createServer(app);
 const io = new Server(server, {
     cors: {
         //origin: 'http://localhost:8080',
-        origin: 'https://full-stack-fighter.onrender.com/',
+        origin: 'https://full-stack-fighter.onrender.com',
         methods:['GET', 'POST']
     }
 });
